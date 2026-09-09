@@ -82,10 +82,31 @@ export default function App() {
     }
   };
 
+  // Self-healing: if localStorage holds a stale/empty profile from an earlier failed parse, upgrade to Shubham's profile
+  useEffect(() => {
+    if (
+      currentProfile &&
+      (currentProfile.name === 'Unknown' ||
+        currentProfile.email?.includes('example.com') ||
+        (!(currentProfile.extractedSkills?.length || currentProfile.skills?.length)))
+    ) {
+      loadShubhamCandidate();
+    }
+  }, []);
+
   const handleUploadSuccess = (profile) => {
     setCurrentProfile(profile);
     addToast('success', `Resume parsed successfully! Welcome, ${profile.name || 'Candidate'}.`);
-    setActiveTab('feed');
+    if (activeTab === 'upload') {
+      setActiveTab('feed');
+    }
+  };
+
+  const handleResetProfile = () => {
+    localStorage.removeItem('job_hunter_profile');
+    setCurrentProfile(null);
+    setMatches([]);
+    addToast('info', 'Profile cleared. You can now upload or extract a new resume.');
   };
 
   const handleTriggerAggregation = async (roles) => {
@@ -107,7 +128,7 @@ export default function App() {
   const [isSendingAlert, setIsSendingAlert] = useState(false);
 
   const handleTriggerEmailAlert = async (targetEmail) => {
-    const emailToUse = targetEmail || currentProfile?.email || 'shendesanju89@gmail.com';
+    const emailToUse = targetEmail || currentProfile?.email || 'shubhamuprade0@gmail.com';
     if (!emailToUse || !emailToUse.includes('@')) {
       addToast('error', 'Please provide a valid recipient email address.');
       return;
@@ -150,6 +171,34 @@ export default function App() {
     }
   };
 
+  // Quick Shubham Uprade profile loader
+  const loadShubhamCandidate = () => {
+    const shubham = {
+      _id: 'shubham-uprade-profile',
+      name: 'Shubham Uprade',
+      email: 'shubhamuprade0@gmail.com',
+      experienceLevel: 'Entry',
+      extractedSkills: [
+        'react.js', 'node.js', 'express.js', 'mongodb', 'javascript',
+        'typescript', 'python', 'java', 'html', 'tailwind css',
+        'rest apis', 'postgresql', 'mysql', 'git', 'github',
+        'jenkins', 'docker', 'postman', 'jwt', 'chakra ui', 'vercel'
+      ],
+      skills: [
+        'react.js', 'node.js', 'express.js', 'mongodb', 'javascript',
+        'typescript', 'python', 'java', 'html', 'tailwind css',
+        'rest apis', 'postgresql', 'mysql', 'git', 'github',
+        'jenkins', 'docker', 'postman', 'jwt', 'chakra ui', 'vercel'
+      ],
+      targetRoles: ['Full Stack Developer (MERN)', 'Frontend Developer', 'Node.js Developer', 'React Developer'],
+      preferredLocations: ['Bhopal, India', 'Bengaluru, India', 'Pune, India', 'Remote (India)'],
+      matchThreshold: 70,
+      lastJobAlertSent: null
+    };
+    setCurrentProfile(shubham);
+    addToast('success', 'Loaded Shubham Uprade (MERN Stack Developer) profile.');
+  };
+
   // Quick Demo profile for instant testing without resume upload
   const loadDemoCandidate = () => {
     const demo = {
@@ -161,6 +210,10 @@ export default function App() {
         'React', 'Node.js', 'TypeScript', 'Docker', 'Kubernetes',
         'AWS', 'MongoDB', 'PostgreSQL', 'Tailwind CSS', 'CI/CD', 'Microservices'
       ],
+      skills: [
+        'React', 'Node.js', 'TypeScript', 'Docker', 'Kubernetes',
+        'AWS', 'MongoDB', 'PostgreSQL', 'Tailwind CSS', 'CI/CD', 'Microservices'
+      ],
       targetRoles: ['Senior Full Stack Engineer', 'Cloud Architect', 'DevOps Engineer'],
       preferredLocations: ['Bengaluru, India', 'Pune, India', 'Remote (India)'],
       matchThreshold: 70,
@@ -168,7 +221,6 @@ export default function App() {
     };
     setCurrentProfile(demo);
     addToast('info', 'Loaded Senior Full Stack sample candidate profile.');
-    setActiveTab('feed');
   };
 
   // Filtered Job Listings
@@ -456,6 +508,11 @@ export default function App() {
             onTriggerEmailAlert={handleTriggerEmailAlert}
             isSendingAlert={isSendingAlert}
             onUpdateEmail={handleUpdateEmail}
+            onUploadSuccess={handleUploadSuccess}
+            onError={(msg) => addToast('error', msg)}
+            onLoadShubham={loadShubhamCandidate}
+            onLoadDemo={loadDemoCandidate}
+            onResetProfile={handleResetProfile}
           />
         )}
       </main>

@@ -81,8 +81,9 @@ export default function ResumeUpload({ onUploadSuccess, onError, currentProfile 
         setIsUploading(false);
         setUploadProgress(0);
         setUploadStatusPhase('');
-        if (onUploadSuccess && result.profile) {
-          onUploadSuccess(result.profile);
+        const extractedProfile = result.profile || result.data?.profile || result.data || result;
+        if (onUploadSuccess && extractedProfile) {
+          onUploadSuccess(extractedProfile);
         }
       }, 600);
     } catch (err) {

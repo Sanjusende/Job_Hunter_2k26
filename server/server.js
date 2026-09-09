@@ -37,6 +37,7 @@ function validateStartupEnvironment() {
 }
 validateStartupEnvironment();
 
+
 // -----------------------------------------------------------------------------
 // In-Memory Repository Fallback (Active when MongoDB is not connected)
 // -----------------------------------------------------------------------------
@@ -110,6 +111,8 @@ app.use(
 // -----------------------------------------------------------------------------
 const allowedOrigins = [
   process.env.CLIENT_ORIGIN,
+  'https://job-hunter-2k26.vercel.app',
+  'https://job-hunter-2k26.onrender.com',
   'http://localhost',
   'http://localhost:80',
   'http://localhost:3000',
@@ -123,8 +126,11 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, reverse proxy forwards)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server proxy)
+      if (!origin) return callback(null, true);
+      
+      // Allow listed origins or any Vercel deployment/preview subdomain
+      if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         return callback(null, true);
       }
       return callback(new Error('CORS Policy: Access from this origin is prohibited by security policy.'));
@@ -308,6 +314,12 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     storageMode: isMongoReady ? 'MongoDB' : 'In-Memory (Resilient Fallback)',
     dbConnected: isMongoReady
+  });
+});
+app.get("/", (req, res) => {
+  res.json({
+    message: "Job Hunter API is running",
+    status: "OK"
   });
 });
 

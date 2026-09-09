@@ -1,8 +1,13 @@
 import axios from 'axios';
 
+// Automatically use Render backend in production or when VITE_API_URL is configured
+const API_BASE_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, '')}/api`
+  : (import.meta.env.PROD ? 'https://job-hunter-2k26.onrender.com/api' : '/api');
+
 const api = axios.create({
-  baseURL: '/api',
-  timeout: 60000, // 60s timeout for Gemini AI processing
+  baseURL: API_BASE_URL,
+  timeout: 90000, // 90s timeout for cold start on Render and Gemini processing
   headers: {
     'Accept': 'application/json'
   }

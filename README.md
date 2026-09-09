@@ -1,252 +1,586 @@
-# 🤖 Job Hunter Agent — Autonomous AI Job Hunter & Resume Matching System
+# 🤖 Job Hunter Agent
 
-An enterprise-grade, autonomous multi-container microservice system that continuously parses candidate resumes using Google Gemini AI, aggregates real-time tech job opportunities across multiple providers, scores matches with weighted ATS compatibility algorithms, and delivers automated email digests via background cron daemons.
+> An AI-powered job discovery and resume matching system that analyzes candidate resumes, aggregates job opportunities, calculates compatibility scores, and delivers automated job alerts.
 
----
-
-## 🏗 Microservices Architecture
-
-```
-                                  [ Client Browser ]
-                                          │
-                                   (Port 80: HTTP)
-                                          ▼
-                      ┌────────────────────────────────────────┐
-                      │            client Container            │
-                      │       (Alpine Nginx Reverse Proxy)     │
-                      │   - Serves React + Vite + Tailwind SPA │
-                      │   - Proxies /api/* to api-server:5000  │
-                      └───────────────────┬────────────────────┘
-                                          │
-                                 (/api/* Proxy Traffic)
-                                          ▼
-                      ┌────────────────────────────────────────┐
-                      │          api-server Container          │
-                      │          (Node.js 20 Express)          │
-                      │   - Multer Memory Storage (.pdf/.docx) │
-                      │   - pdf-parse & mammoth text engine    │
-                      │   - Gemini 2.5 Flash ATS Extraction    │
-                      │   - Real-time Match Calculation API    │
-                      └───────────┬────────────────┬───────────┘
-                                  │                │
-                        (Reads / Writes)      (Network Call)
-                                  │                │
-                                  ▼                ▼
-                     ┌──────────────────┐  ┌──────────────────────┐
-                     │ mongo Container  │  │ Google Gemini AI API │
-                     │   (MongoDB 7.0)  │  └──────────────────────┘
-                     └─────────▲────────┘
-                               │
-                        (Reads / Writes)
-                               │
-                      ┌────────┴───────────────────────────────┐
-                      │          cron-worker Container         │
-                      │        (Node.js 20 Background)         │
-                      │   - Scheduled node-cron daemon         │
-                      │   - RapidAPI JSearch / Adzuna Fetch    │
-                      │   - Keyword Overlap & Skill Matcher    │
-                      │   - Nodemailer HTML Digest Dispatcher  │
-                      └───────────────────┬────────────────────┘
-                                          │
-                                    (SMTP Alert)
-                                          ▼
-                                 [ Candidate Inbox ]
-```
+![Node.js](https://img.shields.io/badge/Node.js-20+-green)
+![React](https://img.shields.io/badge/React-18-blue)
+![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue)
+![License](https://img.shields.io/badge/Status-Active-success)
 
 ---
 
-## 📁 Repository Structure
+## 📌 Overview
 
+**Job Hunter Agent** is a full-stack, containerized application designed to automate parts of the job-search workflow.
+
+The system allows a candidate to upload a resume in **PDF or DOCX format**. The resume is parsed and analyzed using **Google Gemini AI**, extracting relevant information such as skills, target roles, experience level, and preferred locations.
+
+The application then aggregates job listings from supported providers, compares them with the candidate profile, calculates a match score, and can send matching job alerts through email.
+
+---
+
+## ✨ Key Features
+
+* 📄 Resume upload support for **PDF and DOCX**
+* 🤖 AI-powered resume analysis using **Google Gemini**
+* 🧠 Automatic skill and profile extraction
+* 🎯 Job-to-resume compatibility scoring
+* 🔍 Job aggregation from multiple providers
+* 📊 Match score and matched skills visualization
+* 📧 Automated email job alerts
+* ⏰ Background job processing using cron
+* 🗄️ MongoDB-based profile and job storage
+* 🐳 Multi-container Docker architecture
+* 🛡️ File validation, rate limiting, CORS, CSP, and security hardening
+* 📱 Responsive React frontend
+
+---
+
+# 🏗️ Architecture
+
+The application follows a containerized service architecture:
+
+```text
+                    ┌─────────────────┐
+                    │  Client Browser │
+                    └────────┬────────┘
+                             │
+                             ▼
+                  ┌──────────────────────┐
+                  │   React + Nginx      │
+                  │      Client App      │
+                  └──────────┬───────────┘
+                             │
+                         /api/*
+                             │
+                             ▼
+                  ┌──────────────────────┐
+                  │   Node.js + Express  │
+                  │      API Server      │
+                  └───────┬───────┬──────┘
+                          │       │
+                          │       └──────────────► Google Gemini AI
+                          │
+                          ▼
+                    ┌───────────┐
+                    │  MongoDB  │
+                    └─────▲─────┘
+                          │
+                          │
+                  ┌───────┴────────┐
+                  │  Cron Worker   │
+                  │                │
+                  │ • Fetch Jobs   │
+                  │ • Match Skills │
+                  │ • Send Emails  │
+                  └───────┬────────┘
+                          │
+                          ▼
+                    Candidate Email
 ```
+
+---
+
+# 🛠️ Tech Stack
+
+## Frontend
+
+* React 18
+* Vite
+* Tailwind CSS
+* Axios
+* Lucide Icons
+
+## Backend
+
+* Node.js
+* Express.js
+* Mongoose
+
+## Database
+
+* MongoDB
+
+## AI
+
+* Google Gemini API
+
+## Resume Processing
+
+* Multer
+* pdf-parse
+* Mammoth
+
+## Job Sources
+
+* RapidAPI JSearch
+* Adzuna
+* Curated job sources
+
+## Automation
+
+* node-cron
+* Nodemailer
+
+## DevOps
+
+* Docker
+* Docker Compose
+* Nginx
+
+---
+
+# 📁 Project Structure
+
+```text
 job-hunter-agent/
-├── docker-compose.yml          # Multi-container orchestration (client, api-server, cron-worker, mongo)
-├── .env.example                # Canonical environment variable specifications
-├── .gitignore                  # Git exclusions
-├── README.md                   # System documentation & architectural runbook
+│
 ├── client/
-│   ├── Dockerfile              # Multi-stage build (Node 20 Alpine -> Nginx Alpine)
-│   ├── nginx.conf              # Production Nginx reverse proxy & SPA router
-│   ├── package.json            # React 18, Vite, Tailwind CSS, Lucide icons
-│   ├── vite.config.js          # Vite configuration with /api development proxy
-│   ├── tailwind.config.js      # Tailored modern dark palette
-│   ├── postcss.config.js       # PostCSS plugins
-│   ├── index.html              # HTML5 entrypoint with Google Fonts
-│   └── src/
-│       ├── App.jsx             # Main dashboard, tab navigation & toast notifications
-│       ├── main.jsx            # React root mount
-│       ├── index.css           # Glassmorphism utilities & base styles
-│       ├── components/
-│       │   ├── ResumeUpload.jsx       # Drag & drop upload zone (.pdf, .docx) with progress
-│       │   ├── JobCard.jsx            # Job card with score badge & apply trigger
-│       │   ├── MatchBadge.jsx         # Color-coded badge (>80% Green, 60-80% Yellow)
-│       │   └── AnalyticsDashboard.jsx # Extracted ATS skills & cluster telemetry
-│       └── services/
-│           └── api.js          # Axios client with upload progress & error handling
-└── server/
-    ├── Dockerfile              # Production Node 20 Alpine with layer caching
-    ├── package.json            # Express, Helmet, Mongoose, Gemini SDK, node-cron, nodemailer
-    ├── server.js               # Express API server handling uploads, parsing & matches
-    ├── worker.js               # Autonomous background cron worker & alert dispatcher
-    ├── config/
-    │   └── db.js               # Mongoose connection with automated retries & pooling
-    ├── models/
-    │   ├── UserProfile.js      # Candidate profile schema with extracted skills & threshold
-    │   └── JobListing.js       # Job listing schema with 14-day MongoDB TTL index
-    └── services/
-        ├── geminiService.js    # Google Gen AI ATS analyzer with fallback parser
-        ├── jobAggregationService.js # RapidAPI / Adzuna / curated seed aggregator
-        └── emailService.js     # Responsive HTML email digest generator & SMTP sender
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ResumeUpload.jsx
+│   │   │   ├── JobCard.jsx
+│   │   │   ├── MatchBadge.jsx
+│   │   │   └── AnalyticsDashboard.jsx
+│   │   │
+│   │   ├── services/
+│   │   │   └── api.js
+│   │   │
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   │
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   └── package.json
+│
+├── server/
+│   ├── config/
+│   │   └── db.js
+│   │
+│   ├── models/
+│   │   ├── UserProfile.js
+│   │   └── JobListing.js
+│   │
+│   ├── services/
+│   │   ├── geminiService.js
+│   │   ├── jobAggregationService.js
+│   │   └── emailService.js
+│   │
+│   ├── server.js
+│   ├── worker.js
+│   ├── Dockerfile
+│   └── package.json
+│
+├── docker-compose.yml
+├── .env.example
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 🚀 Quick Start (Docker Compose)
+# 🔄 How It Works
 
-### 1. Clone & Configure Environment
+### 1. Upload Resume
+
+The user uploads a resume in:
+
+```text
+PDF
+DOCX
+```
+
+The backend validates the file before processing it.
+
+---
+
+### 2. Resume Parsing
+
+The system extracts text from the uploaded resume using:
+
+* `pdf-parse` for PDF files
+* `mammoth` for DOCX files
+
+---
+
+### 3. AI Profile Extraction
+
+The extracted resume content is analyzed using Google Gemini.
+
+The system extracts information such as:
+
+* Candidate name
+* Email
+* Technical skills
+* Experience level
+* Target job roles
+* Preferred locations
+
+---
+
+### 4. Job Aggregation
+
+The background worker fetches jobs from supported providers.
+
+Jobs are stored and processed for matching.
+
+---
+
+### 5. Job Matching
+
+The system compares:
+
+```text
+Candidate Skills
+        +
+Target Roles
+        +
+Experience Profile
+        ↓
+   Job Requirements
+        ↓
+    Match Score
+```
+
+The result includes:
+
+* Match percentage
+* Matched skills
+* Relevant job information
+* Application link
+
+---
+
+### 6. Email Alerts
+
+The cron worker periodically checks for relevant job matches.
+
+Matching jobs can be sent to the candidate through an HTML email digest.
+
+---
+
+# 🚀 Getting Started
+
+## Prerequisites
+
+Make sure you have:
+
+* Node.js 20+
+* MongoDB or MongoDB Atlas
+* Docker and Docker Compose (recommended)
+* Google Gemini API Key (optional if fallback processing is available)
+
+---
+
+# 🐳 Run with Docker
+
+### 1. Clone the Repository
+
+```bash
+git clone <your-repository-url>
+cd job-hunter-agent
+```
+
+### 2. Create Environment File
+
 ```bash
 cp .env.example .env
 ```
-Edit `.env` to supply your API credentials:
-- `GEMINI_API_KEY`: Your key from [Google AI Studio](https://aistudio.google.com/). *(If omitted, a built-in heuristic ATS fallback runs for zero-friction testing).*
-- `RAPIDAPI_KEY` & `RAPIDAPI_HOST`: Optional RapidAPI JSearch credentials.
-- `ADZUNA_APP_ID` & `ADZUNA_APP_KEY`: Optional Adzuna credentials.
-- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`: SMTP credentials for alert emails. *(If omitted, an Ethereal test inbox link is automatically logged).*
 
-### 2. Launch Entire Microservices Cluster
+Add your environment variables.
+
+### 3. Start the Application
+
+```bash
+docker compose up --build
+```
+
+To run in detached mode:
+
 ```bash
 docker compose up --build -d
 ```
 
-### 3. Verify Container Health
+### 4. Check Container Status
+
 ```bash
 docker compose ps
 ```
-All containers will report `healthy` status:
-- `client`: Accessible at [http://localhost](http://localhost) (Port 80)
-- `api-server`: Accessible at [http://localhost:5000](http://localhost:5000) (Port 5000)
-- `cron-worker`: Running background daemon
-- `mongo`: Local database at port 27017
+
+The application services include:
+
+| Service       | Description                                  |
+| ------------- | -------------------------------------------- |
+| `client`      | React frontend served through Nginx          |
+| `api-server`  | Express API and resume processing            |
+| `cron-worker` | Background job fetching and email processing |
+| `mongo`       | MongoDB database                             |
 
 ---
 
-## 💻 Local Development (Without Docker)
+# 💻 Run Locally Without Docker
 
-If you prefer to run services natively on your host machine:
+## 1. Start MongoDB
 
-### 1. Prerequisites
-- Node.js >= 20.x
-- MongoDB (Running locally on `mongodb://localhost:27017/jobhunter` or MongoDB Atlas URI)
+Use either:
 
-### 2. Start Backend API Server
+* Local MongoDB
+* MongoDB Atlas
+
+Configure the MongoDB connection in your `.env` file.
+
+---
+
+## 2. Start Backend
+
 ```bash
 cd server
 npm install
 npm run dev
 ```
 
-### 3. Start Background Cron Worker (in a separate terminal)
+---
+
+## 3. Start Background Worker
+
+Open another terminal:
+
 ```bash
 cd server
 npm run dev:worker
 ```
 
-### 4. Start Frontend Client (in a separate terminal)
+---
+
+## 4. Start Frontend
+
+Open another terminal:
+
 ```bash
 cd client
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to view the client app with active API proxy.
+
+Open the application in your browser using the URL provided by Vite.
 
 ---
 
-## 📡 REST API Documentation
+# ⚙️ Environment Variables
 
-### 1. Upload & Parse Resume
-- **Endpoint**: `POST /api/resume/upload`
-- **Content-Type**: `multipart/form-data`
-- **Body**: `resume` (Binary `.pdf` or `.docx`, max 10MB)
-- **Response** (HTTP 200):
-```json
-{
-  "success": true,
-  "message": "Resume parsed and profile updated successfully.",
-  "profile": {
-    "_id": "673cf9829...",
-    "email": "candidate@example.com",
-    "name": "Jane Doe",
-    "experienceLevel": "Senior",
-    "extractedSkills": ["React", "Node.js", "Docker", "AWS", "Kubernetes"],
-    "targetRoles": ["Senior Full Stack Engineer", "Cloud Architect"],
-    "preferredLocations": ["Remote", "New York, NY"],
-    "matchThreshold": 70,
-    "lastJobAlertSent": null
-  }
-}
+Create a `.env` file based on `.env.example`.
+
+Example:
+
+```env
+# Google Gemini
+GEMINI_API_KEY=
+
+# RapidAPI / JSearch
+RAPIDAPI_KEY=
+RAPIDAPI_HOST=
+
+# Adzuna
+ADZUNA_APP_ID=
+ADZUNA_APP_KEY=
+
+# MongoDB
+MONGO_URI=
+
+# SMTP
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
 ```
 
-### 2. Get Job Matches for Candidate
-- **Endpoint**: `GET /api/matches/:userId`
-- **Params**: `userId` (MongoDB ObjectId or Email address)
-- **Response** (HTTP 200):
-```json
-{
-  "success": true,
-  "userId": "673cf9829...",
-  "matchesCount": 12,
-  "matches": [
-    {
-      "job": {
-        "jobId": "seed-job-1",
-        "title": "Senior Full Stack Engineer (React / Node / Cloud)",
-        "company": "CloudScale Technologies",
-        "location": "Remote, US",
-        "applyUrl": "https://example.com/apply/senior-fullstack",
-        "source": "Curated"
-      },
-      "matchScore": 94,
-      "matchedSkills": ["React", "Node.js", "Docker", "Kubernetes", "AWS"]
-    }
-  ]
-}
+> Never commit your actual `.env` file or API keys to GitHub.
+
+---
+
+# 📡 API Endpoints
+
+## Upload Resume
+
+```http
+POST /api/resume/upload
 ```
 
-### 3. Readiness & Healthcheck
-- **Endpoint**: `GET /api/health`
-- **Response** (HTTP 200):
+**Content-Type:**
+
+```text
+multipart/form-data
+```
+
+**Form Field:**
+
+```text
+resume
+```
+
+Supported files:
+
+```text
+.pdf
+.docx
+```
+
+---
+
+## Get Job Matches
+
+```http
+GET /api/matches/:userId
+```
+
+Returns matching jobs for the candidate along with:
+
+* Match score
+* Matched skills
+* Job title
+* Company
+* Location
+* Application URL
+* Job source
+
+---
+
+## Health Check
+
+```http
+GET /api/health
+```
+
+Example response:
+
 ```json
 {
   "status": "ok",
-  "uptime": 124.5,
   "dbConnected": true
 }
 ```
 
 ---
 
-## 🛡 Security & Zero-Trust Policies (Module 7)
+# 🛡️ Security Features
 
-The system adheres to defense-in-depth and zero-trust engineering principles across all layers:
+The application includes several security-focused protections:
 
-### 1. Docker & OS-Level Hardening
-- **Non-Root Execution:** Node processes run strictly under the unprivileged `USER node` (UID 1000). Nginx files are owned by `nginx:nginx` with read-only execution permissions.
-- **Linux Capabilities Dropped:** Containers enforce `cap_drop: [ALL]` and `security_opt: [no-new-privileges:true]`.
-- **Zero Public Host Ports for API:** The `api-server` container exposes port `5000` only internally to the private bridge `job-network`. All public ingress passes exclusively through the Nginx reverse proxy on port 80.
+* File type validation
+* File size restrictions
+* File signature verification
+* API rate limiting
+* Helmet security headers
+* Content Security Policy
+* CORS restrictions
+* NoSQL injection sanitization
+* Prompt injection boundaries for AI resume processing
+* Secret masking in logs
+* Non-root container execution
 
-### 2. File Upload & DoS / RCE Defense
-- **Magic Byte File Signature Verification:** Inspects raw file headers (`%PDF-` for PDFs, `PK\x03\x04` for DOCX) to block disguised executable payloads.
-- **Strict Size Limitation:** Files are capped at `5MB` using `multer.memoryStorage()`.
-- **Sandboxed Parsing with Isolated Timeout:** Wraps `pdf-parse` in an asynchronous execution race with a strict 6-second timeout to prevent Regular Expression DoS (ReDoS) or resource exhaustion.
+---
 
-### 3. API & Middleware Hardening
-- **Rate Limiting:** Global rate limiting of 100 requests per 15 minutes per IP; sensitive `/api/resume/upload` endpoint is restricted to 5 requests per 15 minutes per IP to safeguard Gemini AI quota.
-- **Strict Content Security Policy (CSP):** Configured via `helmet()` with frameguard clickjacking protection (`frameguard: { action: 'deny' }`) and 1-year HSTS (`maxAge: 31536000`).
-- **Strict CORS:** Wildcards (`*`) are disallowed in production; incoming origins must match authorized domain whitelists.
-- **NoSQL Injection Prevention:** Sanitization middleware strips MongoDB query operators (`$gt`, `$ne`, `$where`) and key dots from `req.body`, `req.query`, and `req.params`.
+# 🧠 Resume Matching Flow
 
-### 4. Prompt Injection Defense (Gemini ATS Service)
-- **Defensive Boundary Delimiters:** Resume raw text is isolated within explicit demarcation boundaries: `"""UNTRUSTED_RESUME_TEXT_START""" ... """UNTRUSTED_RESUME_TEXT_END"""`.
-- **System Directives:** Instructs Gemini to treat user text strictly as raw data and ignore all embedded prompt overrides, instructions, or role alterations.
-- **Secret Redaction:** Connection strings and API tokens are masked in server logs to prevent credential leakage.
-#   J o b _ H u n t e r _ 2 k 2 6  
- 
+```text
+        Resume
+           │
+           ▼
+   Text Extraction
+           │
+           ▼
+    Gemini AI Analysis
+           │
+           ▼
+    Candidate Profile
+           │
+           ├──────────────┐
+           │              │
+           ▼              ▼
+     Job Listings    Skill Matching
+           │              │
+           └──────┬───────┘
+                  ▼
+             Match Score
+                  │
+                  ▼
+           Matching Jobs
+                  │
+                  ▼
+             Email Alert
+```
+
+---
+
+# 🔐 Important Security Note
+
+Never expose:
+
+* API keys
+* SMTP passwords
+* Database credentials
+* Private environment variables
+
+Use:
+
+```text
+.env
+```
+
+and keep secrets out of version control.
+
+---
+
+# 🧪 Health Check
+
+You can verify the backend service using:
+
+```http
+GET /api/health
+```
+
+This can be used to confirm that:
+
+* The API server is running
+* The database connection is active
+
+---
+
+# 📌 Future Improvements
+
+Potential improvements for future versions:
+
+* User authentication and authorization
+* Multiple resume profiles
+* More ATS job sources
+* Advanced semantic job matching
+* Job bookmarking
+* Application tracking dashboard
+* Interview preparation suggestions
+* Personalized skill-gap recommendations
+* Real-time notifications
+* Deployment to cloud infrastructure
+
+---
+
+# 👨‍💻 Author
+
+**Sanjay Shende**
+
+Full Stack Developer | MERN Stack Developer | Java & DSA Enthusiast
+
+---
+
+# ⭐ Support
+
+If you found this project useful, consider giving the repository a star.
+
+It helps make the project easier to discover and also documents your work publicly.
+
+---
+
+## 📄 License
+
+This project is intended for educational and portfolio purposes.

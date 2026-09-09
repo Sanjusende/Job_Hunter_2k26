@@ -1,0 +1,46 @@
+{
+  "name": "job-hunter-agent-server",
+  "version": "1.0.0",
+  "description": "API Server and Background Worker for Autonomous AI Job Hunter & Resume Matching System",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "worker": "node worker.js",
+    "dev": "nodemon server.js",
+    "dev:worker": "nodemon worker.js"
+  },
+  "keywords": [
+    "job-hunter",
+    "gemini",
+    "resume-matcher",
+    "ats",
+    "ai",
+    "docker",
+    "microservices"
+  ],
+  "author": "Job Hunter Architect",
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^2.21.0",
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.0.0",
+    "mammoth": "^1.8.0",
+    "mongoose": "^8.9.5",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #EEF2FF;
+    color: #0F172A;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Soft Lavender/Periwinkle Canvas Background */
+.bg-mesh {
+  background-color: #EEF2FF;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(199, 210, 254, 0.5) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(176, 174, 255, 0.35) 0px, transparent 45%),
+    radial-gradient(at 50% 30%, rgba(224, 231, 255, 0.6) 0px, transparent 60%),
+    radial-gradient(at 100% 100%, rgba(199, 210, 254, 0.45) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(165, 180, 252, 0.35) 0px, transparent 50%);
+}
+
+/* Bento-Box Surfaces & Pure Crisp White Cards */
+.bento-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(224, 231, 255, 0.85);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.06), 0 1px 3px rgba(15, 23, 42, 0.03);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 20px 35px -5px rgba(99, 102, 241, 0.12), 0 8px 12px -3px rgba(15, 23, 42, 0.04);
+  transform: translateY(-2px);
+}
+
+.bento-panel {
+  background: #FFFFFF;
+  border: 1px solid rgba(224, 231, 255, 0.9);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.06), 0 1px 4px rgba(15, 23, 42, 0.03);
+}
+
+.bento-nav {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(224, 231, 255, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.06);
+}
+
+/* Skeleton Loading Shimmer ("scalettne") */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #F1F5F9 0%,
+    #E2E8F0 40%,
+    #EEF2FF 50%,
+    #E2E8F0 60%,
+    #F1F5F9 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Button Micro-interactions & Animations */
+.btn-animated {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-animated:hover {
+  transform: translateY(-2px);
+}
+
+.btn-animated:active {
+  transform: scale(0.96);
+}
+
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px -1px rgba(99, 102, 241, 0.4);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-primary-gradient:hover {
+  background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
+  box-shadow: 0 8px 20px -2px rgba(99, 102, 241, 0.55);
+  transform: translateY(-2px);
+}
+
+.btn-primary-gradient:active {
+  transform: scale(0.96);
+}
+
+.btn-secondary-bento {
+  background: #FFFFFF;
+  color: #1E1B4B;
+  border: 1px solid rgba(199, 210, 254, 0.8);
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-secondary-bento:hover {
+  background: #F8FAFC;
+  border-color: #6366F1;
+  color: #4F46E5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+}
+
+.btn-secondary-bento:active {
+  transform: scale(0.96);
+}
+
+/* Responsive Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #EEF2FF;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C7D2FE;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A5B4FC;
+}
+
+/* Hide scrollbar for clean horizontal pill tabs on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

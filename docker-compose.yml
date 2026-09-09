@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Frontend Client: React + Vite + Tailwind CSS served via Nginx Reverse Proxy
+  # Security: Unprivileged reverse proxy, sole ingress point for external traffic
+  # ----------------------------------------------------------------------------
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: job-hunter-client
+    restart: unless-stopped
+    ports:
+      - "${CLIENT_PORT:-80}:80"
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      api-server:
+        condition: service_healthy
+    networks:
+      - job-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # 2. Backend API Server: Express + Gemini ATS Analyzer + MongoDB Persistence
+  # Security: Network-isolated (no exposed public host port), cap_drop ALL, non-root
+  # ----------------------------------------------------------------------------
+  api-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: job-hunter-api-server
+    restart: unless-stopped
+    command: ["node", "server.js"]
+    # Production Zero-Trust: Do not expose port 5000 directly to the public network.
+    # All external traffic must ingress through the Nginx reverse proxy on job-network.
+    expose:
+      - "5000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=5000
+      - CLIENT_ORIGIN=${CLIENT_ORIGIN:-http://localhost}
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/jobhunter}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+      - RAPIDAPI_HOST=${RAPIDAPI_HOST:-jsearch.p.rapidapi.com}
+      - ADZUNA_APP_ID=${ADZUNA_APP_ID}
+      - ADZUNA_APP_KEY=${ADZUNA_APP_KEY}
+      - ADZUNA_COUNTRY=${ADZUNA_COUNTRY:-us}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - EMAIL_FROM=${EMAIL_FROM:-"Job Hunter Agent" <no-reply@jobhunteragent.io>}
+      - MATCH_THRESHOLD=${MATCH_THRESHOLD:-70}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - job-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:5000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # 3. Cron Worker: Decoupled scheduled pipelines, aggregations & email alerts
+  # Security: No exposed ports, cap_drop ALL, non-root execution
+  # ----------------------------------------------------------------------------
+  cron-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: job_agent_worker
+    restart: unless-stopped
+    command: ["node", "worker.js"]
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/jobhunter}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+      - RAPIDAPI_HOST=${RAPIDAPI_HOST:-jsearch.p.rapidapi.com}
+      - ADZUNA_APP_ID=${ADZUNA_APP_ID}
+      - ADZUNA_APP_KEY=${ADZUNA_APP_KEY}
+      - ADZUNA_COUNTRY=${ADZUNA_COUNTRY:-us}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - EMAIL_FROM=${EMAIL_FROM:-"Job Hunter Agent" <no-reply@jobhunteragent.io>}
+      - CRON_SCHEDULE=${CRON_SCHEDULE:-0 */6 * * *}
+      - MATCH_THRESHOLD=${MATCH_THRESHOLD:-70}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      api-server:
+        condition: service_healthy
+    networks:
+      - job-network
+
+  # ----------------------------------------------------------------------------
+  # 4. Database: Embedded MongoDB Instance with Persistent Volume
+  # ----------------------------------------------------------------------------
+  mongo:
+    image: mongo:7.0-jammy
+    container_name: job-hunter-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - job-network
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  job-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local

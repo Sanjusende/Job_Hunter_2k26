@@ -44,15 +44,16 @@ const upload = multer({
   }
 });
 
-// Rate limiter: 5 uploads per 15 minutes per IP to prevent DoS & quota abuse
+// Rate limiter: 15 uploads per 15 minutes per IP to prevent DoS & quota abuse
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     success: false,
-    error: 'Resume upload rate limit reached (maximum 5 uploads per 15 minutes). Please try again later.'
+    error: 'Resume upload rate limit reached (maximum 15 uploads per 15 minutes). Please try again later.'
   }
 });
 
@@ -252,7 +253,7 @@ async function handleResumeUpload(req, res) {
       const memoryKey = candidateEmail || profileId;
       updatedProfile = {
         _id: profileId,
-        email: candidateEmail || defaultEmail,
+        email: candidateEmail || `candidate-${Date.now()}@jobhunter.internal`,
         name: parsedData.name || 'Candidate',
         extractedSkills: candidateSkills,
         skills: candidateSkills,
@@ -286,7 +287,7 @@ async function handleResumeUpload(req, res) {
       activeJobs = SEED_JOBS;
     }
 
-    // Calculate match for each job
+    // Calculate match for each job and sort descending by match score
     const evaluatedJobs = activeJobs.map(job => {
       const match = calculateJobMatch(candidateSkills, job, parsedData.targetRoles);
       return {
@@ -299,41 +300,44 @@ async function handleResumeUpload(req, res) {
         description: job.description,
         matchScore: match.score,
         score: match.score,
-        matchedSkills: match.matchedSkills
+        matchedSkills: match.matchedSkills,
+        matchBreakdown: {
+          matchedCount: match.matchedSkills?.length || 0,
+          totalCandidateSkills: candidateSkills.length,
+          totalRequiredSkills: match.totalRequiredSkills || 0,
+          roleBonus: match.roleBonus || 0
+        }
       };
-    });
+    }).sort((a, b) => b.matchScore - a.matchScore);
 
     // Strictly filter jobs where Match Score is between 70% and 100% (inclusive). Never dispatch < 70%.
     const qualifiedJobs = evaluatedJobs
       .filter(j => j.matchScore >= 70 && j.matchScore <= 100)
-      .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 10);
 
     let instantAlertDispatched = false;
 
     // Email alert goes STRICTLY and EXCLUSIVELY to the candidate's extracted email from their resume!
+    // Dispatched asynchronously in background so SMTP timeouts NEVER block or stall the HTTP upload response
     if (qualifiedJobs.length > 0 && candidateEmail && candidateEmail.includes('@') && !candidateEmail.endsWith('@example.com')) {
-      try {
-        console.log(`[ResumeRoutes] Immediate 70%+ job alert sent to candidate's resume email: ${candidateEmail} (${qualifiedJobs.length} qualified jobs)`);
-        await sendCandidateJobAlert({
-          candidateName: parsedData.name || 'Candidate',
-          candidateEmail: candidateEmail, // Candidate's direct resume email
-          matchedJobs: qualifiedJobs
-        });
+      console.log(`[ResumeRoutes] Dispatching immediate 70%+ job alert to candidate's resume email: ${candidateEmail} (${qualifiedJobs.length} qualified jobs)`);
+      instantAlertDispatched = true;
 
-        instantAlertDispatched = true;
-
-        // Update lastJobAlertSent
+      sendCandidateJobAlert({
+        candidateName: parsedData.name || 'Candidate',
+        candidateEmail: candidateEmail,
+        matchedJobs: qualifiedJobs
+      }).then(() => {
+        console.log(`[ResumeRoutes] Successfully delivered email alert to candidate's resume email: ${candidateEmail}`);
         if (isMongoReady && updatedProfile && typeof updatedProfile.save === 'function') {
           updatedProfile.lastJobAlertSent = new Date();
-          await updatedProfile.save().catch(() => { });
+          updatedProfile.save().catch(() => { });
         } else if (updatedProfile) {
           updatedProfile.lastJobAlertSent = new Date();
         }
-        console.log(`[ResumeRoutes] Successfully delivered email alert to candidate's resume email: ${candidateEmail}`);
-      } catch (emailErr) {
+      }).catch((emailErr) => {
         console.error(`[ResumeRoutes] Instant email alert failed for ${candidateEmail}:`, emailErr.message);
-      }
+      });
     } else if (!candidateEmail) {
       console.log('[ResumeRoutes] Email alert skipped: No personal email address was found in the uploaded resume.');
     } else {
@@ -347,6 +351,7 @@ async function handleResumeUpload(req, res) {
         : 'Resume parsed successfully. Note: No email was found in your resume file.',
       candidateEmail: candidateEmail,
       profile: updatedProfile,
+      matches: evaluatedJobs,
       instantAlertDispatched,
       matchedJobsCount: qualifiedJobs.length,
       topMatchScore: qualifiedJobs[0]?.matchScore || 0

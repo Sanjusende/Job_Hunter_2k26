@@ -19,10 +19,16 @@ const { parseResumeWithGemini } = require('./services/geminiService');
 const { aggregateAndUpsertJobs, SEED_JOBS } = require('./services/jobAggregationService');
 const { sendJobAlertEmail, sendJobMatchesAlert, sendCandidateJobAlert } = require('./services/emailService');
 const { calculateJobMatch: calculateJobMatchService } = require('./services/matchingService');
-const { router: resumeRouter, handleResumeUpload } = require('./routes/resumeRoutes');
+const { router: resumeRouter, handleResumeUpload, inMemoryProfiles } = require('./routes/resumeRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// -----------------------------------------------------------------------------
+// Trust Proxy: Required for Render, Heroku, AWS and cloud reverse proxies
+// Enables accurate client IP detection and prevents express-rate-limit ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+// -----------------------------------------------------------------------------
+app.set('trust proxy', 1);
 
 // -----------------------------------------------------------------------------
 // Security Hardening: Startup Configuration Validation (Zero-Trust)
@@ -37,17 +43,21 @@ function validateStartupEnvironment() {
 }
 validateStartupEnvironment();
 
-
-// -----------------------------------------------------------------------------
 // In-Memory Repository Fallback (Active when MongoDB is not connected)
-// -----------------------------------------------------------------------------
-const inMemoryProfiles = new Map();
 let inMemoryJobs = [...SEED_JOBS];
 
 // Initiate Database Connection (Non-blocking)
 connectDB().then((connected) => {
   if (!connected) {
     console.log('[Server] In-memory store initialized with', inMemoryJobs.length, 'curated tech openings.');
+  } else {
+    // Ensure MongoDB has jobs seeded if empty
+    JobListing.countDocuments().then(count => {
+      if (count === 0) {
+        console.log('[Server] MongoDB jobs collection is empty. Auto-seeding curated jobs...');
+        JobListing.insertMany(SEED_JOBS).catch(e => console.warn('Auto-seed warning:', e.message));
+      }
+    }).catch(() => {});
   }
 }).catch((err) => {
   console.warn('[Server] MongoDB connection attempt finished with fallback.');
@@ -62,21 +72,23 @@ const globalLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     success: false,
     error: 'Too many requests from this client. Please try again after 15 minutes.'
   }
 });
 
-// Strict upload limiter: 5 resume uploads per 15 minutes per IP to prevent DoS & quota abuse
+// Strict upload limiter: 15 resume uploads per 15 minutes per IP
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     success: false,
-    error: 'Resume upload rate limit reached (maximum 5 uploads per 15 minutes). Please try again later.'
+    error: 'Resume upload rate limit reached (maximum 15 uploads per 15 minutes). Please try again later.'
   }
 });
 

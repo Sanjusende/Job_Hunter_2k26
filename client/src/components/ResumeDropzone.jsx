@@ -110,7 +110,7 @@ export default function ResumeDropzone({ onUploadSuccess, onError, currentProfil
             matchedJobsCount: result.matchedJobsCount || 0,
             instantAlertDispatched: result.instantAlertDispatched
           });
-          if (onUploadSuccess) onUploadSuccess(result.profile);
+          if (onUploadSuccess) onUploadSuccess(result.profile, result.matches);
         }
       }, 600);
     } catch (err) {

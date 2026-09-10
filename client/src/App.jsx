@@ -94,8 +94,11 @@ export default function App() {
     }
   }, []);
 
-  const handleUploadSuccess = (profile) => {
+  const handleUploadSuccess = (profile, directMatches) => {
     setCurrentProfile(profile);
+    if (directMatches && Array.isArray(directMatches) && directMatches.length > 0) {
+      setMatches(directMatches);
+    }
     addToast('success', `Resume parsed successfully! Welcome, ${profile.name || 'Candidate'}.`);
     if (activeTab === 'upload') {
       setActiveTab('feed');

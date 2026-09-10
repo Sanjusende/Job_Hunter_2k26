@@ -30,7 +30,10 @@ async function getTransporter() {
     if (isGmail) {
       cachedTransporter = nodemailer.createTransport({
         service: 'gmail',
-        auth: { user, pass }
+        auth: { user, pass },
+        connectionTimeout: 8000, // 8s timeout
+        greetingTimeout: 8000,
+        socketTimeout: 12000
       });
       console.log(`[EmailService] Production Gmail transporter configured for ${user}`);
     } else {
@@ -38,7 +41,10 @@ async function getTransporter() {
         host: host || 'localhost',
         port: parseInt(process.env.SMTP_PORT || '587', 10),
         secure: process.env.SMTP_SECURE === 'true',
-        auth: { user, pass }
+        auth: { user, pass },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 12000
       });
       console.log(`[EmailService] Production SMTP transporter configured for ${host}:${process.env.SMTP_PORT || 587}`);
     }

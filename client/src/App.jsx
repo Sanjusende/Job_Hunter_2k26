@@ -14,11 +14,15 @@ import {
   Bot,
   ExternalLink,
   Zap,
-  Mail
+  Mail,
+  HelpCircle,
+  Compass,
+  Code2
 } from 'lucide-react';
 import ResumeUpload from './components/ResumeUpload';
 import JobCard from './components/JobCard';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
+import HowItWorks from './components/HowItWorks';
 import { JobListSkeleton } from './components/SkeletonLoader';
 import { fetchJobMatches, checkHealth, triggerJobAggregation, triggerEmailAlert, updateProfileEmail } from './services/api';
 
@@ -252,13 +256,13 @@ export default function App() {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 truncate">Job Hunter Agent</span>
+                <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 truncate">Real Job Hunter 2K26</span>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
-                  ATS v2.5
+                  AI ATS
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 hidden sm:block truncate font-medium">
-                Autonomous Career Agent &bull; Continuous Matching Engine
+                AI Job Search &bull; Resume Matching Tool for Developers
               </p>
             </div>
           </div>
@@ -293,6 +297,17 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => setActiveTab('how-it-works')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 btn-animated ${activeTab === 'how-it-works'
+                ? 'bg-white text-indigo-700 shadow-bento'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+            >
+              <Compass className={`w-4 h-4 ${activeTab === 'how-it-works' ? 'text-indigo-600' : 'text-slate-400'}`} />
+              <span>How It Works</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('analytics')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 btn-animated ${activeTab === 'analytics'
                 ? 'bg-white text-indigo-700 shadow-bento'
@@ -316,41 +331,71 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {/* Tab 1: Resume Upload & ATS Parsing */}
+        {/* Tab 1: Resume Upload & ATS Parsing (Home Page) */}
         {activeTab === 'upload' && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="text-center space-y-2.5 mb-6 sm:mb-8">
+          <div className="max-w-5xl mx-auto space-y-10">
+            {/* SEO Optimized Hero Header */}
+            <div className="text-center space-y-3.5 mb-6 sm:mb-8 max-w-4xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs mb-1">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Next-Gen Career Intelligence</span>
+                <span>Next-Gen Autonomous Career Intelligence</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                Autonomous Job Matching &amp; ATS Parser
+              <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                Real Job Hunter 2K26 – AI Job Search &amp; Resume Matching Tool
               </h1>
-              <p className="text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
-                Powered by Google Gemini AI, MongoDB, and scheduled background workers. Drop your resume to trigger continuous opportunity tracking.
+              <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                The premier AI developer job finder and resume matcher for software developers, engineers, and freshers. Extract ATS competencies with Google Gemini, match Indian tech hub &amp; remote openings, and receive 70%+ email alerts.
               </p>
+
+              {/* SEO Keyword Badges */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] font-semibold">
+                <span className="px-3 py-1 rounded-lg bg-white border border-slate-200/80 shadow-xs text-indigo-700 font-bold">
+                  AI Developer Job Finder
+                </span>
+                <span className="px-3 py-1 rounded-lg bg-white border border-slate-200/80 shadow-xs text-slate-700">
+                  Software Developer Job Search AI
+                </span>
+                <span className="px-3 py-1 rounded-lg bg-white border border-slate-200/80 shadow-xs text-slate-700">
+                  Resume Matcher for Developers
+                </span>
+                <span className="px-3 py-1 rounded-lg bg-white border border-slate-200/80 shadow-xs text-indigo-700 font-bold">
+                  Fresher Developer Job Finder
+                </span>
+              </div>
             </div>
 
-            <ResumeUpload
-              onUploadSuccess={handleUploadSuccess}
-              onError={(msg) => addToast('error', msg)}
-              currentProfile={currentProfile}
-            />
+            <div className="max-w-3xl mx-auto space-y-6">
+              <ResumeUpload
+                onUploadSuccess={handleUploadSuccess}
+                onError={(msg) => addToast('error', msg)}
+                currentProfile={currentProfile}
+              />
 
-            {/* Quick Demo Bento Card */}
-            <div className="bento-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="text-left space-y-0.5">
-                <span className="text-sm font-bold text-slate-900 block">Want to test without a file?</span>
-                <span className="text-xs text-slate-500">Load a pre-configured Senior Full Stack &amp; Cloud Architect profile.</span>
+              {/* Quick Demo Bento Card */}
+              <div className="bento-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="text-left space-y-0.5">
+                  <span className="text-sm font-bold text-slate-900 block">Want to test without a file?</span>
+                  <span className="text-xs text-slate-500">Load a pre-configured Senior Full Stack &amp; Cloud Architect profile.</span>
+                </div>
+                <button
+                  onClick={loadDemoCandidate}
+                  className="btn-primary-gradient w-full sm:w-auto px-5 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 whitespace-nowrap shadow-btn-glow"
+                >
+                  <Zap className="w-4 h-4 text-white" />
+                  <span>Load Sample Candidate</span>
+                </button>
               </div>
-              <button
-                onClick={loadDemoCandidate}
-                className="btn-primary-gradient w-full sm:w-auto px-5 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 whitespace-nowrap shadow-btn-glow"
-              >
-                <Zap className="w-4 h-4 text-white" />
-                <span>Load Sample Candidate</span>
-              </button>
+            </div>
+
+            {/* How It Works Section right on the Home Page */}
+            <div className="pt-10 border-t border-slate-200/80">
+              <HowItWorks
+                onStartUpload={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onExploreJobs={() => setActiveTab('feed')}
+                onLoadDemo={loadDemoCandidate}
+              />
             </div>
           </div>
         )}
@@ -518,6 +563,26 @@ export default function App() {
             onResetProfile={handleResetProfile}
           />
         )}
+
+        {/* Tab 4: Dedicated How It Works Explainer */}
+        {activeTab === 'how-it-works' && (
+          <div className="max-w-5xl mx-auto">
+            <HowItWorks
+              onStartUpload={() => {
+                setActiveTab('upload');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onExploreJobs={() => {
+                setActiveTab('feed');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onLoadDemo={() => {
+                loadDemoCandidate();
+                setActiveTab('feed');
+              }}
+            />
+          </div>
+        )}
       </main>
 
       {/* Mobile Floating Bottom Navigation Dock (Thumb-friendly & tactile) */}
@@ -544,6 +609,15 @@ export default function App() {
         </button>
 
         <button
+          onClick={() => setActiveTab('how-it-works')}
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all btn-animated ${activeTab === 'how-it-works' ? 'text-indigo-600 font-bold bg-indigo-50/80' : 'text-slate-400 hover:text-slate-700'
+            }`}
+        >
+          <Compass className="w-4 h-4" />
+          <span className="text-[10px]">How It Works</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('analytics')}
           className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all btn-animated ${activeTab === 'analytics' ? 'text-indigo-600 font-bold bg-indigo-50/80' : 'text-slate-400 hover:text-slate-700'
             }`}
@@ -553,15 +627,27 @@ export default function App() {
         </button>
       </nav>
 
-      {/* Footer in Soft Lavender Theme */}
-      <footer className="mt-auto border-t border-indigo-100 bg-white/70 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-medium">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-            <span>Micro-architecture: 3 Containers &bull; Node 20 &bull; Nginx &bull; MongoDB</span>
+      {/* SEO-Rich Semantic Footer */}
+      <footer className="mt-auto border-t border-indigo-100 bg-white/80 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+              <strong className="text-slate-800">Real Job Hunter 2K26</strong> &bull; 
+              <span>AI Job Search &amp; Resume Matching Tool</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-slate-400">
+              <span>Google Gemini ATS</span>
+              <span>&bull;</span>
+              <span>Autonomous Job Crawler</span>
+              <span>&bull;</span>
+              <span>Instant 70%+ Email Alerts</span>
+            </div>
           </div>
-          <div>
-            <span>Continuous ATS Pipeline &bull; Gemini AI</span>
+          <div className="pt-2 border-t border-slate-100 text-center text-[11px] text-slate-400">
+            <p>
+              AI Developer Job Finder &bull; Software Developer Job Search AI &bull; AI Tool for Software Engineers &bull; Developer Job Matching Tool &bull; Resume Matcher for Software Developers &bull; Fresher Developer Job Finder
+            </p>
           </div>
         </div>
       </footer>

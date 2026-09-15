@@ -103,7 +103,11 @@ export default function App() {
     if (directMatches && Array.isArray(directMatches) && directMatches.length > 0) {
       setMatches(directMatches);
     }
-    addToast('success', `Resume parsed successfully! Welcome, ${profile.name || 'Candidate'}.`);
+    const qualified70Count = (directMatches || []).filter(m => (m.matchScore || m.score) >= 70).length;
+    const matchMsg = qualified70Count > 0 
+      ? ` 🎯 Found ${qualified70Count} roles with ≥70% job match skills!`
+      : ' Ready to explore job matches!';
+    addToast('success', `Resume parsed successfully for ${profile.name || 'Candidate'}!${matchMsg}`);
     if (activeTab === 'upload') {
       setActiveTab('feed');
     }
@@ -473,18 +477,18 @@ export default function App() {
                     All
                   </button>
                   <button
-                    onClick={() => setMinScoreFilter(60)}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all btn-animated ${minScoreFilter === 60 ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                    onClick={() => setMinScoreFilter(70)}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all btn-animated ${minScoreFilter === 70 ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
                       }`}
                   >
-                    &gt;60%
+                    &ge;70%
                   </button>
                   <button
-                    onClick={() => setMinScoreFilter(80)}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all btn-animated ${minScoreFilter === 80 ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                    onClick={() => setMinScoreFilter(85)}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all btn-animated ${minScoreFilter === 85 ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
                       }`}
                   >
-                    &gt;80%
+                    &ge;85%
                   </button>
                 </div>
 

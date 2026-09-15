@@ -14,12 +14,17 @@ export default function MatchBadge({ score, size = 'md', showLabel = true }) {
   let textLabel = 'Match';
   let dotColor = '';
 
-  if (numericScore >= 80) {
-    colorClasses = 'bg-emerald-50 border-emerald-200 text-emerald-800';
-    glowStyle = 'shadow-[0_2px_8px_rgba(16,185,129,0.15)]';
-    textLabel = 'High Match';
+  if (numericScore >= 85) {
+    colorClasses = 'bg-emerald-50 border-emerald-300 text-emerald-900';
+    glowStyle = 'shadow-[0_2px_10px_rgba(16,185,129,0.25)] ring-1 ring-emerald-400/30';
+    textLabel = 'Exceptional Match';
     dotColor = 'bg-emerald-500';
-  } else if (numericScore >= 60) {
+  } else if (numericScore >= 70) {
+    colorClasses = 'bg-teal-50 border-teal-300 text-teal-900';
+    glowStyle = 'shadow-[0_2px_8px_rgba(20,184,166,0.2)] ring-1 ring-teal-400/30';
+    textLabel = '70%+ Qualified';
+    dotColor = 'bg-teal-500';
+  } else if (numericScore >= 50) {
     colorClasses = 'bg-indigo-50 border-indigo-200 text-indigo-800';
     glowStyle = 'shadow-[0_2px_8px_rgba(99,102,241,0.12)]';
     textLabel = 'Good Match';

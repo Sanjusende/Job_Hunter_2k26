@@ -59,12 +59,61 @@ export default function JobCard({ matchItem, candidateSkills = [] }) {
   const gradientIndex = (companyName.charCodeAt(0) || 0) % gradients.length;
   const companyGradient = gradients[gradientIndex];
 
-  // Identify missing skills / skills gap for candidate guidance
-  const commonTech = ['react', 'node.js', 'typescript', 'docker', 'aws', 'mongodb', 'kubernetes', 'python', 'graphql', 'sql'];
+  // Canonical skill mapping to ensure candidate skills like 'react.js' or 'reactjs' are never flagged as a gap
+  const SKILL_ALIASES = {
+    'react': ['react', 'react.js', 'reactjs', 'react js', 'react native'],
+    'node.js': ['node.js', 'nodejs', 'node js', 'node'],
+    'typescript': ['typescript', 'ts'],
+    'javascript': ['javascript', 'js'],
+    'docker': ['docker'],
+    'aws': ['aws', 'amazon web services'],
+    'mongodb': ['mongodb', 'mongo', 'mongoose'],
+    'kubernetes': ['kubernetes', 'k8s'],
+    'python': ['python', 'python3'],
+    'graphql': ['graphql'],
+    'sql': ['sql', 'mysql', 'postgresql', 'postgres'],
+    'tailwind css': ['tailwind', 'tailwindcss', 'tailwind css']
+  };
+
+  // Combine matchedSkills and candidate's total profile skills
+  const allKnownSkills = [
+    ...(Array.isArray(matchedSkills) ? matchedSkills : []),
+    ...(Array.isArray(candidateSkills) ? candidateSkills : [])
+  ].map(s => String(s || '').toLowerCase().trim());
+
+  const candidateHasSkill = (tech) => {
+    const aliases = SKILL_ALIASES[tech] || [tech];
+    return aliases.some(alias =>
+      allKnownSkills.some(known => known === alias || known.includes(alias) || (alias.length > 3 && known.startsWith(alias)))
+    );
+  };
+
+  // Extract server-computed missing skills if available from deterministic engine
+  const serverMissingSkills = Array.isArray(matchItem?.missingSkills)
+    ? matchItem.missingSkills
+    : (Array.isArray(matchItem?.skillsGap) ? matchItem.skillsGap : []);
+
+  // Comprehensive tech dictionary for fallback client detection
+  const EXTENDED_TECH = [
+    'react', 'node.js', 'typescript', 'javascript', 'docker', 'kubernetes', 'aws',
+    'azure', 'gcp', 'mongodb', 'postgresql', 'mysql', 'sql', 'python', 'java',
+    'golang', 'rust', 'c++', 'c#', '.net', 'graphql', 'next.js', 'express.js',
+    'tailwind css', 'ci/cd', 'terraform', 'ansible', 'jenkins', 'linux', 'redis', 'kafka'
+  ];
+
   const jobTextLower = `${job.title} ${job.description}`.toLowerCase();
-  const missingSkills = commonTech.filter(tech =>
-    jobTextLower.includes(tech) && !matchedSkills.map(s => s.toLowerCase()).includes(tech)
-  ).slice(0, 3);
+  const detectedMissing = EXTENDED_TECH.filter(tech => {
+    const aliases = SKILL_ALIASES[tech] || [tech];
+    const jobRequiresTech = aliases.some(alias => jobTextLower.includes(alias));
+    // It's only a gap if job requires it AND candidate does NOT already have it in profile or matched skills
+    return jobRequiresTech && !candidateHasSkill(tech);
+  });
+
+  // Combine and deduplicate missing skills
+  const missingSkills = Array.from(new Set([
+    ...serverMissingSkills.filter(s => !candidateHasSkill(s)),
+    ...detectedMissing
+  ]));
 
   // Fallback direct URL if applyUrl is missing or example.com
   let applyUrl = job.applyUrl || '#';
@@ -214,6 +263,43 @@ export default function JobCard({ matchItem, candidateSkills = [] }) {
             </div>
           )}
         </div>
+
+        {/* Below 70% Threshold Skills Gap Advisory Banner */}
+        {finalScore < 70 && (
+          <div className="my-2.5 p-3 rounded-2xl bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-rose-50/70 border border-amber-200/90 text-slate-800 text-xs shadow-xs space-y-1.5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="font-bold flex items-center gap-1.5 text-amber-900">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>70%+ Reaching Skills Gap:</span>
+              </span>
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-200/90 text-amber-900 border border-amber-300">
+                Score: {finalScore}% (70%+ Chahiye)
+              </span>
+            </div>
+
+            {missingSkills.length > 0 ? (
+              <>
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  {missingSkills.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-white text-rose-700 border border-rose-200 shadow-2xs lowercase"
+                    >
+                      +{skill}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-[11px] text-amber-900/90 font-medium leading-relaxed">
+                  💡 Ye skills sikhne ya resume me mention karne se aapka match score <strong>70%+</strong> cross ho jayega aur direct email alert dispatch hoga!
+                </p>
+              </>
+            ) : (
+              <p className="text-[11px] text-amber-900/90 font-medium leading-relaxed">
+                💡 Job title se related targeted keywords resume me mention karne se score <strong>70%+</strong> cross ho jayega!
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Description snippet */}
         <div className="text-xs sm:text-[13px] text-slate-600 leading-relaxed">

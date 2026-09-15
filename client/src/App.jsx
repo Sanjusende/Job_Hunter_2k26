@@ -518,7 +518,11 @@ export default function App() {
             ) : filteredMatches.length > 0 ? (
               <div className="grid grid-cols-1 gap-4 sm:gap-5">
                 {filteredMatches.map((matchItem, idx) => (
-                  <JobCard key={matchItem.job?.jobId || idx} matchItem={matchItem} />
+                  <JobCard
+                    key={matchItem.job?.jobId || idx}
+                    matchItem={matchItem}
+                    candidateSkills={currentProfile?.extractedSkills || currentProfile?.skills || []}
+                  />
                 ))}
               </div>
             ) : (
